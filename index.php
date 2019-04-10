@@ -20,25 +20,26 @@ try {
 
 if ($response->isSuccessful()) {
     $totalPageCount = $response->pagination['totalPageCount'];
-    $consolidatedClient = $response->customers[0];
+    //$consolidatedClient = $response->customers[0];
     $clientList = [];
-    for ($page = 1; $page <= $totalPageCount; $page++){
+    for ($page = 1; $page <= $totalPageCount; $page++) {
         $responseCustomersList = $client->request->customersList(['dateFrom' => '2016-01-01', 'dateTo' => '2017-12-31'], $page, 20);
         foreach ($responseCustomersList->customers as $customer) {
             print_r($customer['email']);
             echo PHP_EOL;
             $emailList[$customer['id']] = $customer['email']; // Получаем список клиентов и их E-mail [id]=>[email]
-            //$customerList[$customer['id']] = $customer;
+            $customerList[$customer['id']] = $customer;
         }
     }
     var_dump(count($emailList));
 
     for ($page = 1; $page <= $totalPageCount; $page++) {
         $responseCustomersList2 = $client->request->customersList(['dateFrom' => '2016-01-01', 'dateTo' => '2017-12-31'], $page, 20);
-        foreach ($responseCustomersList2->customers as $customer) {
-            foreach ($emailList as $key => $email){
+        foreach ($emailList as $key => $email) {
+            foreach ($responseCustomersList2->customers as $customer) {
+                // тут добавить условие, чтобы не объединять самого с собой
                 if ($email == $customer['email']) {
-                    $responseСustomersCombine = $client->request->customersCombine($customer, $customerList['необходимо передать тут массив']);
+                    $responseСustomersCombine = $client->request->customersCombine([$customer], $customerList[$key]);
                     var_dump($responseСustomersCombine);
                 }
             }
