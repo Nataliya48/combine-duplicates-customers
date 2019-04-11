@@ -22,17 +22,24 @@ try {
 if ($response->isSuccessful()) {
     $totalPageCount = $response->pagination['totalPageCount'];
 
-    $emailList = [];
+    $customerList = [];
     for ($page = 1; $page <= $totalPageCount; $page++) {
         $responseCustomersList = $client->request->customersList(['dateFrom' => '2016-01-01', 'dateTo' => '2017-12-31'], $page, 20);
-        $emailList = array_map(function ($customer) {
-            $emailList['id'] = $customer['id'];
-            $emailList['email'] = $customer['email'];
-            return $emailList;
-        }, $responseCustomersList->customers);
+        foreach ($responseCustomersList->customers as $customer) {
+            $customerList[$customer['email']] = $customer;
+        }
     }
-    print_r($emailList);
 
+    for ($page = 1; $page <= $totalPageCount; $page++) {
+        foreach ($customerList as $key => $custom) {
+            $responseCustomersList = $client->request->customersList(['email' => $key], $page, 20);
+            foreach ($responseCustomersList->customers as $customer) {
+                $responseСustomersCombine = $client->request->customersCombine([$customer], $custom);
+                //var_dump($responseСustomersCombine);
+                //добавить логировние результата
+            }
+        }
+    }
 } else {
     echo sprintf(
         "Error: [HTTP-code %s] %s",
