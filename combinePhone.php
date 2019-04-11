@@ -1,4 +1,5 @@
 <?php
+
 require_once 'vendor/autoload.php';
 
 $dotenv = Dotenv\Dotenv::create(__DIR__);
@@ -20,28 +21,24 @@ try {
 
 if ($response->isSuccessful()) {
     $totalPageCount = $response->pagination['totalPageCount'];
-    //$consolidatedClient = $response->customers[0];
-    $clientList = [];
+
+    $customerList = [];
     for ($page = 1; $page <= $totalPageCount; $page++) {
         $responseCustomersList = $client->request->customersList(['dateFrom' => '2016-01-01', 'dateTo' => '2017-12-31'], $page, 20);
         foreach ($responseCustomersList->customers as $customer) {
-            print_r($customer['email']);
-            echo PHP_EOL;
-            $emailList[$customer['id']] = $customer['email']; // Получаем список клиентов и их E-mail [id]=>[email]
-            $customerList[$customer['id']] = $customer;
+            foreach ($customer['phones'] as $phone) {
+                $customerList[$phone['number']] = $customer;
+            }
         }
     }
-    var_dump(count($emailList));
+    file_put_contents('email.log', json_encode(['DATE' => date('Y-m-d H:i:s'), 'customerList' => $customerList], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), FILE_APPEND);
 
     for ($page = 1; $page <= $totalPageCount; $page++) {
-        $responseCustomersList2 = $client->request->customersList(['dateFrom' => '2016-01-01', 'dateTo' => '2017-12-31'], $page, 20);
-        foreach ($emailList as $key => $email) {
-            foreach ($responseCustomersList2->customers as $customer) {
-                // тут добавить условие, чтобы не объединять самого с собой
-                if ($email == $customer['email']) {
-                    $responseСustomersCombine = $client->request->customersCombine([$customer], $customerList[$key]);
-                    var_dump($responseСustomersCombine);
-                }
+        foreach ($customerList as $key => $custom) {
+            $responseCustomersList = $client->request->customersList(['name' => $key], $page, 20);
+            foreach ($responseCustomersList->customers as $customer) {
+                $responseСustomersCombine = $client->request->customersCombine([$customer], $custom);
+                file_put_contents('response.log', json_encode(['DATE' => date('Y-m-d H:i:s'), 'customerId' => $customer['id'], 'response' => [$responseСustomersCombine->getStatusCode(), $responseСustomersCombine->isSuccessful(), isset($responseСustomersCombine['errorMsg']) ? $responseСustomersCombine['errorMsg'] : 'not errors']], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), FILE_APPEND);
             }
         }
     }
